@@ -40,4 +40,4 @@ A robust iOS audio recording and transcription app built with SwiftUI, AVAudioEn
 - To run tests: Product > Test in Xcode
 
 ## Contact
-For questions or feedback, open an issue or contact [Your Name] at [your.email@example.com]. 
+For questions or feedback, open an issue or contact Abhijeet Gajjar at gajjarabhijeet@gmail.com. 
