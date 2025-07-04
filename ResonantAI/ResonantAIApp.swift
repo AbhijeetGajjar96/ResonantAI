@@ -1,0 +1,143 @@
+//
+//  ResonantAIApp.swift
+//  ResonantAI
+//
+//  Created by Abhijeet gajjar on 7/1/25.
+//
+
+import SwiftUI
+import SwiftData
+
+@main
+struct ResonantAIApp: App {
+    @Environment(\.scenePhase) private var scenePhase
+    
+    // Initialize managers
+    let encryptedFileManager = EncryptedFileManager()
+    let tokenManager = SecureTokenManager()
+    let apiClient: TranscriptionAPIClient
+    let localTranscriber = LocalTranscriber()
+    let recordingManager: RecordingManager
+    let transcriptionManager: TranscriptionManager
+    
+    init() {
+        // TEMP: Store OpenAI API key for testing. REMOVE BEFORE PRODUCTION!
+        SecureTokenManager().saveToken("sk-abcdef1234567890abcdef1234567890abcdef12")
+        //SecureTokenManager().saveToken("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")
+        //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
+        apiClient = TranscriptionAPIClient()
+        recordingManager = RecordingManager(fileManager: encryptedFileManager)
+        transcriptionManager = TranscriptionManager(apiClient: apiClient, localTranscriber: localTranscriber, fileManager: encryptedFileManager)
+    }
+    
+    var body: some Scene {
+        WindowGroup {
+            // Inject view models and managers
+            TabView {
+                RecordingViewContainer()
+                    .tabItem {
+                        Label("Record", systemImage: "mic")
+                    }
+                // Inject SwiftData context into SessionListViewModel
+                ModelContainerView { context in
+                    Group {
+                        let sessionListVM = SessionListViewModel(context: context)
+                        SessionListView(viewModel: sessionListVM)
+                            .environmentObject(sessionListVM)
+                            .tabItem {
+                                Label("Sessions", systemImage: "list.bullet")
+                            }
+                    }
+                }
+            }
+            .environmentObject(recordingManager)
+            .environmentObject(transcriptionManager)
+            .overlay(TranscriptionManagerContextSetter().environmentObject(transcriptionManager))
+        }
+        .modelContainer(for: [Session.self, Segment.self])
+        .onChange(of: scenePhase) { newPhase in
+            if newPhase == .background {
+                print("App moved to background")
+                recordingManager.beginBackgroundTask()
+                recordingManager.flushSegment()
+                recordingManager.endBackgroundTask()
+            }
+            if newPhase == .active {
+                print("App became active")
+                // Optionally resume or check state
+            }
+        }
+    }
+}
+
+// Helper view to provide ModelContext to child views
+struct ModelContainerView<Content: View>: View {
+    @Environment(\.modelContext) private var modelContext
+    let content: (ModelContext) -> Content
+    var body: some View {
+        content(modelContext)
+    }
+}
+
+struct TranscriptionManagerContextSetter: View {
+    @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject var transcriptionManager: TranscriptionManager
+    var body: some View {
+        Color.clear
+            .onAppear {
+                transcriptionManager.setModelContext(modelContext)
+            }
+    }
+}
+
+
+// sk-abcdef1234567890abcdef1234567890abcdef12
+// sk-1234567890abcdef1234567890abcdef12345678
+// sk-abcdefabcdefabcdefabcdefabcdefabcdef12
+// sk-7890abcdef7890abcdef7890abcdef7890abcd
+// sk-1234abcd1234abcd1234abcd1234abcd1234abcd
+// sk-abcd1234abcd1234abcd1234abcd1234abcd1234
+// sk-5678efgh5678efgh5678efgh5678efgh5678efgh
+// sk-efgh5678efgh5678efgh5678efgh5678efgh5678
+// sk-ijkl1234ijkl1234ijkl1234ijkl1234ijkl1234
+// sk-mnop5678mnop5678mnop5678mnop5678mnop5678
+// sk-qrst1234qrst1234qrst1234qrst1234qrst1234
+// sk-uvwx5678uvwx5678uvwx5678uvwx5678uvwx5678
+// sk-1234ijkl1234ijkl1234ijkl1234ijkl1234ijkl
+// sk-5678mnop5678mnop5678mnop5678mnop5678mnop
+// sk-qrst5678qrst5678qrst5678qrst5678qrst5678
+// sk-uvwx1234uvwx1234uvwx1234uvwx1234uvwx1234
+// sk-1234abcd5678efgh1234abcd5678efgh1234abcd
+// sk-5678ijkl1234mnop5678ijkl1234mnop5678ijkl
+// sk-abcdqrstefghuvwxabcdqrstefghuvwxabcdqrst
+// sk-ijklmnop1234qrstijklmnop1234qrstijklmnop
+// sk-1234uvwx5678abcd1234uvwx5678abcd1234uvwx
+// sk-efghijkl5678mnopabcd1234efghijkl5678mnop
+// sk-mnopqrstuvwxabcdmnopqrstuvwxabcdmnopqrst
+// sk-ijklmnopqrstuvwxijklmnopqrstuvwxijklmnop
+// sk-abcd1234efgh5678abcd1234efgh5678abcd1234
+// sk-1234ijklmnop5678ijklmnop1234ijklmnop5678
+// sk-qrstefghuvwxabcdqrstefghuvwxabcdqrstefgh
+// sk-uvwxijklmnop1234uvwxijklmnop1234uvwxijkl
+// sk-abcd5678efgh1234abcd5678efgh1234abcd5678
+// sk-ijklmnopqrstuvwxijklmnopqrstuvwxijklmnop
+// sk-1234qrstuvwxabcd1234qrstuvwxabcd1234qrst
+// sk-efghijklmnop5678efghijklmnop5678efghijkl
+// sk-mnopabcd1234efghmnopabcd1234efghmnopabcd
+// sk-ijklqrst5678uvwxijklqrst5678uvwxijklqrst
+// sk-1234ijkl5678mnop1234ijkl5678mnop1234ijkl
+// sk-abcdqrstefgh5678abcdqrstefgh5678abcdqrst
+// sk-ijklmnopuvwx1234ijklmnopuvwx1234ijklmnop
+// sk-efgh5678abcd1234efgh5678abcd1234efgh5678
+// sk-mnopqrstijkl5678mnopqrstijkl5678mnopqrst
+// sk-1234uvwxabcd5678uvwxabcd1234uvwxabcd5678
+// sk-ijklmnop5678efghijklmnop5678efghijklmnop
+// sk-abcd1234qrstuvwxabcd1234qrstuvwxabcd1234
+// sk-1234efgh5678ijkl1234efgh5678ijkl1234efgh
+// sk-5678mnopqrstuvwx5678mnopqrstuvwx5678mnop
+// sk-abcdijkl1234uvwxabcdijkl1234uvwxabcdijkl
+// sk-ijklmnopabcd5678ijklmnopabcd5678ijklmnop
+// sk-1234efghqrstuvwx1234efghqrstuvwx1234efgh
+// sk-5678ijklmnopabcd5678ijklmnopabcd5678ijkl
+// sk-abcd1234efgh5678abcd1234efgh5678abcd1234
+// sk-ijklmnopqrstuvwxijklmnopqrstuvwxijklmnop
