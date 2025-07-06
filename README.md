@@ -14,10 +14,22 @@ A robust iOS audio recording and transcription app built with SwiftUI, AVAudioEn
 - Full accessibility and VoiceOver support
 - Robust error handling for all edge cases
 
+---
+
+**Transcription Options:**
+- **OpenAI Whisper API:**  
+  The code for integrating with the OpenAI Whisper API is already written.  
+  _To use it, you must provide your own OpenAI API key (see Setup Instructions below)._
+- **Local Speech Transcription (Apple Example):**  
+  If you do not wish to use the OpenAI API, or for testing purposes, the app will automatically fall back to using Apple's on-device speech recognition (SFSpeechRecognizer).
+
+---
+
 ## Setup Instructions
 1. Clone the repo: `git clone <your-repo-url>`
 2. Open `ResonantAI.xcodeproj` in Xcode 15+
-3. Add your OpenAI API key in `ResonantAIApp.swift` or via the in-app settings
+3. **Add your OpenAI API key in `ResonantAIApp.swift` or via the in-app settings**  
+   _If you do not provide an API key, only local transcription will be used._
 4. Enable Background Modes (Audio) in Signing & Capabilities
 5. Build and run on a real device (Live Activities require a device)
 

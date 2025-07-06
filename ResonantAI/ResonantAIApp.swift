@@ -23,8 +23,6 @@ struct ResonantAIApp: App {
     init() {
         // TEMP: Store OpenAI API key for testing. REMOVE BEFORE PRODUCTION!
         SecureTokenManager().saveToken("sk-abcdef1234567890abcdef1234567890abcdef12")
-        //SecureTokenManager().saveToken("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")
-        //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
         apiClient = TranscriptionAPIClient()
         recordingManager = RecordingManager(fileManager: encryptedFileManager)
         transcriptionManager = TranscriptionManager(apiClient: apiClient, localTranscriber: localTranscriber, fileManager: encryptedFileManager)
